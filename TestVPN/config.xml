@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<credentials>
+
+  <credential>
+    <host>pl226.vpnbook.com</host>
+    <login>vpnbook</login>
+    <password>dA9rJds</password>
+  </credential>
+
+  <credential>
+    <host>de4.vpnbook.com</host>
+    <login>vpnbook</login>
+    <password>dA9rJds</password>
+  </credential>
+
+  <credential>
+    <host>us1.vpnbook.com</host>
+    <login>vpnbook</login>
+    <password>dA9rJds</password>
+  </credential>
+
+  <credential>
+    <host>fr1.vpnbook.com</host>
+    <login>vpnbook</login>
+    <password>dA9rJds</password>
+  </credential>
+
+</credentials>

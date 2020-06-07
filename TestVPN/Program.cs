@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Xml.Linq;
 
 namespace TestVPN
 {
@@ -13,7 +15,7 @@ namespace TestVPN
         private static string Host { get; set; }
         private static string Login { get; set; }
         private static string Password { get; set; }
-        private static string Path { get; set; }
+        private static string Path { get; set; } = Directory.GetCurrentDirectory();
         private static Status CurrentStatus { get; set; } = Status.Disconnected;
         private static Commands Command { get; set; } = Commands.About;
 
@@ -50,7 +52,7 @@ namespace TestVPN
                     case Commands.Connect:
                         if (CurrentStatus != Status.Connected)
                         {
-                            Connect();
+                            Auth();
                             if (Ip != GetLocalIpAddress())
                             {
                                 Console.WriteLine("Connection has been established\r\n");
@@ -60,7 +62,6 @@ namespace TestVPN
                             {
                                 Console.WriteLine("Connection hasn't been established!");
                             }
-
                         }
                         else
                         {
@@ -95,15 +96,76 @@ namespace TestVPN
             }
         }
 
+        private static void Auth()
+        {
+            Console.Write("Do you want to read config file? [y/n] ");
+            switch (Console.ReadLine())
+            {
+                case "yes":
+                    XDocument confifFile = XDocument.Load($@"{Environment.CurrentDirectory}\config.xml");
+                    XElement root = confifFile.Root;
+                    List<Config> configs = new List<Config>();
+                    foreach (var item in root.Elements())
+                    {
+                        try
+                        {
+                            configs.Add(
+                                new Config
+                                {
+                                    Host = item.Element("host").Value,
+                                    Login = item.Element("login").Value,
+                                    Password = item.Element("password").Value,
+                                });
+                        }
+                        catch (ArgumentNullException)
+                        {
+                            Console.WriteLine("Check config file credentials");
+                            throw;
+                        }
+                    }
+                    Console.WriteLine("Config file has been read");
+                    if (configs.Count > 1)
+                    {
+                        Console.WriteLine($"What server do you want to use? [1-{configs.Count}]");
+                        var i = 0;
+                        foreach (var item in configs)
+                        {
+                            Console.WriteLine($"\t{++i}. {item.Host}");
+                        }
+                        if (int.TryParse(Console.ReadLine(), out int server))
+                        {
+                            try
+                            {
+                                Host = configs[server - 1].Host;
+                                Login = configs[server - 1].Login;
+                                Password = configs[server - 1].Password;
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                Console.WriteLine("Don't try to do this again! Bye");
+                                throw;
+                            }
+                        }
+                        Connect();
+                        return;
+                    }
+                    break;
+                default:
+                    Console.Write("host: ");
+                    Host = Console.ReadLine();
+                    Console.Write("login: ");
+                    Login = Console.ReadLine();
+                    Console.Write("password: ");
+                    Password = Console.ReadLine();
+                    Connect();
+                    break;
+            }
+        }
+
         private static void Connect()
         {
-            Console.Write("host: ");
-            Host = Console.ReadLine();
-            Console.Write("login: ");
-            Login = Console.ReadLine();
-            Console.Write("password: ");
-            Password = Console.ReadLine();
-            Path = Directory.GetCurrentDirectory();
+            Console.WriteLine("Connection process has been initiated");
+
 
             var sb = new StringBuilder();
             sb.AppendLine("[VPN]");
@@ -150,7 +212,7 @@ namespace TestVPN
         private static string GetLocalIpAddress()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
+            foreach (var ip  in host.AddressList)
             {
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
